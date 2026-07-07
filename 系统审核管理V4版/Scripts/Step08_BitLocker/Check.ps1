@@ -1,0 +1,2 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{ $bl=Get-BitLockerVolume -MountPoint 'C:' -ErrorAction Stop; New-Result -Step '08_BitLocker' -Enabled ($bl.ProtectionStatus -eq 'On') -Status '检查完成' -Evidence $bl }catch{ New-Result -Step '08_BitLocker' -Success $false -Status '检查失败' -ErrorMessage $_.Exception.Message }

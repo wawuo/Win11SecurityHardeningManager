@@ -1,0 +1,2 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{ $admins=Get-LocalGroupMember -Group 'Administrators' -ErrorAction Stop|Select Name,ObjectClass,PrincipalSource; New-Result -Step '09_LocalAdmin' -Enabled $true -Status '检查完成' -Evidence @{Administrators=$admins} }catch{ New-Result -Step '09_LocalAdmin' -Success $false -Status '检查失败' -ErrorMessage $_.Exception.Message }

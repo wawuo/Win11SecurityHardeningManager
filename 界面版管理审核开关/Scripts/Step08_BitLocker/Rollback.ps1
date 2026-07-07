@@ -1,0 +1,6 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{
+    Require-Admin
+    Disable-BitLocker -MountPoint 'C:'
+    New-Result -Step '08_BitLocker' -Enabled $false -Status '已发起 BitLocker 解密，完成需要时间'
+}catch{ New-Result -Step '08_BitLocker' -Success $false -Status '回滚失败' -ErrorMessage $_.Exception.Message }

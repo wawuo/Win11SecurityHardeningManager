@@ -1,0 +1,44 @@
+﻿using System.Diagnostics;
+using System.Text;
+
+namespace Win11SecurityHardeningManager;
+
+public static class PowerShellRunner
+{
+    public static async Task<(int ExitCode, string Output)> RunScriptAsync(string scriptPath, string actionName)
+    {
+        Directory.CreateDirectory("Logs");
+        var logFile = Path.Combine("Logs", DateTime.Now.ToString("yyyyMMdd") + ".log");
+
+        var psi = new ProcessStartInfo
+        {
+            FileName = "powershell.exe",
+            Arguments = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\"",
+            WorkingDirectory = AppContext.BaseDirectory,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8
+        };
+
+        using var p = new Process { StartInfo = psi };
+        var sb = new StringBuilder();
+        sb.AppendLine($"===== {DateTime.Now:yyyy-MM-dd HH:mm:ss} {actionName} =====");
+        sb.AppendLine(scriptPath);
+
+        p.Start();
+        string stdout = await p.StandardOutput.ReadToEndAsync();
+        string stderr = await p.StandardError.ReadToEndAsync();
+        await p.WaitForExitAsync();
+
+        sb.AppendLine(stdout);
+        if (!string.IsNullOrWhiteSpace(stderr)) sb.AppendLine("[ERROR] " + stderr);
+        sb.AppendLine($"ExitCode={p.ExitCode}");
+        sb.AppendLine();
+        await File.AppendAllTextAsync(logFile, sb.ToString(), Encoding.UTF8);
+
+        return (p.ExitCode, stdout + Environment.NewLine + stderr);
+    }
+}

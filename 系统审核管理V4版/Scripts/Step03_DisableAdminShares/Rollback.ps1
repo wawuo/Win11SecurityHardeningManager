@@ -1,0 +1,2 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{ Require-Admin; Remove-ItemProperty -Path 'HKLM:\SYSTEM\CurrentControlSet\Services\LanmanServer\Parameters' -Name AutoShareWks -ErrorAction SilentlyContinue; New-Result -Step '03_DisableAdminShares' -Enabled $false -Status '已恢复默认共享注册表设置；重启后 Windows 可重新创建盘符默认共享' }catch{ New-Result -Step '03_DisableAdminShares' -Success $false -Status '回滚失败' -ErrorMessage $_.Exception.Message }

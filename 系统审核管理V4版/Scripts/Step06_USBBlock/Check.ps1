@@ -1,0 +1,2 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{ $p='HKLM:\SOFTWARE\Policies\Microsoft\Windows\RemovableStorageDevices'; $v=Get-ItemProperty -Path $p -Name Deny_All -ErrorAction SilentlyContinue; New-Result -Step '06_USBBlock' -Enabled ($v.Deny_All -eq 1) -Status '检查完成' -Evidence @{RegPath=$p; Deny_All=$v.Deny_All} }catch{ New-Result -Step '06_USBBlock' -Success $false -Status '检查失败' -ErrorMessage $_.Exception.Message }

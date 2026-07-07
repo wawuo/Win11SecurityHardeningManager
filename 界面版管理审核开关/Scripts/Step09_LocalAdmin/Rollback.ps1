@@ -1,0 +1,5 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{
+    Require-Admin
+    New-Result -Step '09_LocalAdmin' -Enabled $false -Status '本模块不自动回滚启用账号，避免误开启历史管理员；请手动 Enable-LocalUser 指定账号。'
+}catch{ New-Result -Step '09_LocalAdmin' -Success $false -Status '回滚失败' -ErrorMessage $_.Exception.Message }

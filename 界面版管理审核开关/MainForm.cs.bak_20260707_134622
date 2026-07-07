@@ -1,0 +1,174 @@
+﻿using System.Text;
+using System.Text.Json;
+
+namespace Win11SecurityHardeningManager;
+
+public sealed class MainForm : Form
+{
+    private readonly DataGridView grid = new();
+    private readonly TextBox output = new();
+    private readonly Button btnCheckAll = new();
+    private readonly Button btnEnableAll = new();
+    private readonly Button btnReport = new();
+
+    private readonly List<HardeningStep> steps = new()
+    {
+        new(){Id="01", Title="Windows 11 Pro 单机审计日志保留自动化工具 V4", ScriptFolder="Step01_AuditLog"},
+        new(){Id="02", Title="限制其他域账号登录", ScriptFolder="Step02_LoginRestriction", HighRisk=true},
+        new(){Id="03", Title="关闭默认共享如 C$", ScriptFolder="Step03_DisableAdminShares", HighRisk=true},
+        new(){Id="04", Title="外加指纹启用 2FA 登录（人工/第三方 Credential Provider）", ScriptFolder="", HighRisk=true},
+        new(){Id="05", Title="添加漏洞扫描服务", ScriptFolder="Step05_VulnerabilityScanner"},
+        new(){Id="06", Title="关闭 USB 传输", ScriptFolder="Step06_USBBlock", HighRisk=true},
+        new(){Id="07", Title="超时锁屏", ScriptFolder="Step07_AutoLock"},
+        new(){Id="08", Title="开启 BitLocker 并将恢复密钥保存", ScriptFolder="Step08_BitLocker", HighRisk=true},
+        new(){Id="09", Title="将本地管理员全部停用（保留白名单）", ScriptFolder="Step09_LocalAdmin", HighRisk=true},
+    };
+
+    public MainForm()
+    {
+        Text = "Windows 11 单机安全合规加固管理器 V1";
+        Width = 1180;
+        Height = 760;
+        StartPosition = FormStartPosition.CenterScreen;
+
+        var top = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 45 };
+        btnCheckAll.Text = "一键检查全部";
+        btnEnableAll.Text = "一键执行全部加固";
+        btnReport.Text = "生成 HTML 报告";
+        btnCheckAll.Width = 130;
+        btnEnableAll.Width = 160;
+        btnReport.Width = 140;
+        top.Controls.AddRange(new Control[]{btnCheckAll, btnEnableAll, btnReport});
+
+        grid.Dock = DockStyle.Top;
+        grid.Height = 380;
+        grid.AllowUserToAddRows = false;
+        grid.RowHeadersVisible = false;
+        grid.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
+        grid.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+        grid.Columns.Add("Id", "步骤");
+        grid.Columns.Add("Title", "项目");
+        grid.Columns.Add("Status", "状态");
+        AddButtonColumn("Check", "检查");
+        AddButtonColumn("Enable", "启用");
+        AddButtonColumn("Rollback", "回滚/禁用");
+
+        foreach (var s in steps) grid.Rows.Add(s.Id, s.Title, "未检查", "检查", "启用", "回滚");
+        grid.Columns[0].Width = 55;
+        grid.Columns[1].Width = 550;
+        grid.Columns[2].Width = 250;
+
+        output.Dock = DockStyle.Fill;
+        output.Multiline = true;
+        output.ScrollBars = ScrollBars.Both;
+        output.Font = new Font("Consolas", 10);
+
+        Controls.Add(output);
+        Controls.Add(grid);
+        Controls.Add(top);
+
+        grid.CellContentClick += Grid_CellContentClick;
+        btnCheckAll.Click += async (_, _) => await RunAllAsync("Check");
+        btnEnableAll.Click += async (_, _) => await RunAllAsync("Enable");
+        btnReport.Click += (_, _) => GenerateHtmlReport();
+    }
+
+    private void AddButtonColumn(string name, string text)
+    {
+        var col = new DataGridViewButtonColumn { Name = name, HeaderText = text, Text = text, UseColumnTextForButtonValue = true };
+        grid.Columns.Add(col);
+    }
+
+    private async void Grid_CellContentClick(object? sender, DataGridViewCellEventArgs e)
+    {
+        if (e.RowIndex < 0) return;
+        var colName = grid.Columns[e.ColumnIndex].Name;
+        if (colName is not ("Check" or "Enable" or "Rollback")) return;
+        await RunStepAsync(e.RowIndex, colName);
+    }
+
+    private async Task RunAllAsync(string action)
+    {
+        if (action == "Enable")
+        {
+            var r = MessageBox.Show("一键加固包含 USB 禁用、BitLocker、本地管理员停用等高风险项。确认继续？", "高风险确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (r != DialogResult.Yes) return;
+        }
+        for (int i = 0; i < steps.Count; i++) await RunStepAsync(i, action);
+    }
+
+    private async Task RunStepAsync(int rowIndex, string action)
+    {
+        var step = steps[rowIndex];
+        if (step.Id == "04")
+        {
+            grid.Rows[rowIndex].Cells["Status"].Value = "需 Credential Provider / Windows Hello for Business / 第三方 MFA，不能用普通脚本强制登录前 2FA";
+            Append($"[04] {grid.Rows[rowIndex].Cells["Status"].Value}\r\n");
+            return;
+        }
+        if (action != "Check" && step.HighRisk)
+        {
+            var r = MessageBox.Show($"确认对步骤 {step.Id} 执行 {action}？\r\n{step.Title}", "高风险确认", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (r != DialogResult.Yes) return;
+        }
+
+        var scriptName = action == "Rollback" ? "Rollback.ps1" : action + ".ps1";
+        var scriptPath = Path.Combine(AppContext.BaseDirectory, "Scripts", step.ScriptFolder, scriptName);
+        if (!File.Exists(scriptPath))
+        {
+            grid.Rows[rowIndex].Cells["Status"].Value = "脚本不存在";
+            return;
+        }
+
+        grid.Rows[rowIndex].Cells["Status"].Value = "执行中...";
+        var result = await PowerShellRunner.RunScriptAsync(scriptPath, $"{step.Id}-{action}");
+        Append(result.Output + "\r\n");
+        grid.Rows[rowIndex].Cells["Status"].Value = TryGetStatus(result.Output);
+    }
+
+    private string TryGetStatus(string text)
+    {
+        try
+        {
+            var start = text.IndexOf('{');
+            var end = text.LastIndexOf('}');
+            if (start >= 0 && end > start)
+            {
+                var json = text.Substring(start, end - start + 1);
+                using var doc = JsonDocument.Parse(json);
+                var root = doc.RootElement;
+                var success = root.TryGetProperty("Success", out var s) && s.GetBoolean();
+                var enabled = root.TryGetProperty("Enabled", out var e) && e.GetBoolean();
+                var status = root.TryGetProperty("Status", out var st) ? st.GetString() : "已完成";
+                return $"{(success ? "成功" : "失败")} / {(enabled ? "已启用" : "未启用")} / {status}";
+            }
+        }
+        catch { }
+        return "已完成，详见输出";
+    }
+
+    private void Append(string s)
+    {
+        if (InvokeRequired) { Invoke(() => Append(s)); return; }
+        output.AppendText(s + Environment.NewLine);
+    }
+
+    private void GenerateHtmlReport()
+    {
+        Directory.CreateDirectory("Reports");
+        var sb = new StringBuilder();
+        sb.AppendLine("<html><head><meta charset='utf-8'><title>Compliance Report</title>");
+        sb.AppendLine("<style>body{font-family:Segoe UI,Microsoft YaHei,sans-serif}table{border-collapse:collapse;width:100%}td,th{border:1px solid #ccc;padding:8px}</style></head><body>");
+        sb.AppendLine("<h1>Windows 11 单机安全合规加固报告</h1>");
+        sb.AppendLine($"<p>计算机：{Environment.MachineName}　时间：{DateTime.Now:yyyy-MM-dd HH:mm:ss}</p>");
+        sb.AppendLine("<table><tr><th>步骤</th><th>项目</th><th>状态</th></tr>");
+        foreach (DataGridViewRow row in grid.Rows)
+            sb.AppendLine($"<tr><td>{row.Cells[0].Value}</td><td>{System.Net.WebUtility.HtmlEncode(Convert.ToString(row.Cells[1].Value))}</td><td>{System.Net.WebUtility.HtmlEncode(Convert.ToString(row.Cells[2].Value))}</td></tr>");
+        sb.AppendLine("</table><h2>执行输出</h2><pre>");
+        sb.AppendLine(System.Net.WebUtility.HtmlEncode(output.Text));
+        sb.AppendLine("</pre></body></html>");
+        var file = Path.Combine("Reports", $"ComplianceReport_{DateTime.Now:yyyyMMdd_HHmmss}.html");
+        File.WriteAllText(file, sb.ToString(), Encoding.UTF8);
+        MessageBox.Show("报告已生成：" + Path.GetFullPath(file));
+    }
+}

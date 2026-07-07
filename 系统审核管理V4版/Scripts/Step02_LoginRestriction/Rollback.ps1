@@ -1,0 +1,2 @@
+﻿. "$PSScriptRoot\..\Common.ps1"
+try{ Require-Admin; Remove-LocalGroup -Name 'AllowInteractiveLogon' -ErrorAction SilentlyContinue; New-Result -Step '02_LoginRestriction' -Enabled $false -Status '已删除登录白名单组' }catch{ New-Result -Step '02_LoginRestriction' -Success $false -Status '回滚失败' -ErrorMessage $_.Exception.Message }
