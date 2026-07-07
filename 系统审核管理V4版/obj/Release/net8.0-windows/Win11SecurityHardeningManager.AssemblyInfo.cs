@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Win11SecurityHardeningManager")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Release")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f86dcc215c48f5c06d46b957b9f5e3e48863c132")]
 [assembly: System.Reflection.AssemblyProductAttribute("Win11SecurityHardeningManager")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Win11SecurityHardeningManager")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

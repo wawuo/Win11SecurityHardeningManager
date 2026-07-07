@@ -1,2 +1,0 @@
-﻿. "$PSScriptRoot\..\Common.ps1"
-try{ Require-Admin; $s=Read-Settings; $p='HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System'; New-ItemProperty -Path $p -Name InactivityTimeoutSecs -Value ([int]$s.ScreenLockTimeoutSeconds) -PropertyType DWord -Force|Out-Null; New-Result -Step '07_AutoLock' -Enabled $true -Status "已设置空闲 $($s.ScreenLockTimeoutSeconds) 秒自动锁屏" -Evidence @{InactivityTimeoutSecs=$s.ScreenLockTimeoutSeconds} }catch{ New-Result -Step '07_AutoLock' -Success $false -Status '启用失败' -ErrorMessage $_.Exception.Message }

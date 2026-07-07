@@ -1,2 +1,0 @@
-﻿. "$PSScriptRoot\..\Common.ps1"
-try{ Require-Admin; $p='HKLM:\SOFTWARE\Policies\Microsoft\Windows\RemovableStorageDevices'; New-Item -Path $p -Force|Out-Null; New-ItemProperty -Path $p -Name Deny_All -Value 1 -PropertyType DWord -Force|Out-Null; gpupdate /target:computer /force | Out-Null; New-Result -Step '06_USBBlock' -Enabled $true -Status '已禁用所有可移动存储类访问' -Evidence @{Deny_All=1} }catch{ New-Result -Step '06_USBBlock' -Success $false -Status '启用失败' -ErrorMessage $_.Exception.Message }

@@ -1,5 +1,5 @@
 ﻿{
-  "AppName": "Windows 11 单机安全合规加固管理器 V4 Integrated",
+  "AppName": "Windows 11 单机安全合规加固管理器 V5 CSharp Native",
   "AuditRetentionDays": 90,
   "ArchiveRoot": "C:\\AuditArchive",
   "SecurityLogMaxBytes": 1073741824,
@@ -10,14 +10,9 @@
     "D:\\AuditSandbox"
   ],
   "FileAuditIdentity": "Everyone",
-  "FileAuditRights": "CreateFiles,CreateDirectories,Write,Delete,DeleteSubdirectoriesAndFiles,ChangePermissions,TakeOwnership",
   "EnableHandleManipulationAudit": false,
-  "EnableObjectAccessAudit": true,
-  "EnableFileShareAudit": true,
-  "EnablePrintServiceOperationalLog": true,
-  "EnablePowerShellOperationalLog": true,
   "ExportLookbackDays": 1,
-  "ScheduledTaskName": "Win11AuditV4-DailyExport",
+  "ScheduledTaskName": "Win11AuditV5-DailyExport",
   "ScheduledTaskTime": "23:30",
   "AllowedDomain": "YOURDOMAIN",
   "AllowedDomainUsers": [
@@ -25,8 +20,7 @@
   ],
   "ScreenLockTimeoutSeconds": 900,
   "KeepLocalAdmins": [
-    "Administrator",
-    "admin"
+    "Administrator"
   ],
   "BitLockerRecoveryKeyBackupPath": "C:\\BitLockerKeys",
   "VulnerabilityScannerInstallerPath": "C:\\Tools\\ScannerAgentSetup.exe",

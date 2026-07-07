@@ -1,4 +1,5 @@
 ﻿namespace Win11SecurityHardeningManager;
+
 internal static class Program
 {
     [STAThread]

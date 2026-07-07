@@ -8,9 +8,8 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
   <ItemGroup>
-    <None Include="Scripts\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="Config\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="Logs\**\*.*" CopyToOutputDirectory="PreserveNewest" />
-    <None Include="Reports\**\*.*" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="Config\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="Logs\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="Reports\**\*.*" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

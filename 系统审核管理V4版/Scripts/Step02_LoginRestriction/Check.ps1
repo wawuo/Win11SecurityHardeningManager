@@ -1,2 +1,0 @@
-﻿. "$PSScriptRoot\..\Common.ps1"
-try{ $g=Get-LocalGroup -Name 'AllowInteractiveLogon' -ErrorAction SilentlyContinue; $m=@(); if($g){$m=Get-LocalGroupMember -Group 'AllowInteractiveLogon' -ErrorAction SilentlyContinue}; New-Result -Step '02_LoginRestriction' -Enabled ($null -ne $g) -Status '检查完成；本模块以本地白名单组辅助实施，真正允许/拒绝登录请结合 secpol.msc 用户权限分配确认' -Evidence @{GroupExists=($null -ne $g); Members=$m} }catch{ New-Result -Step '02_LoginRestriction' -Success $false -Status '检查失败' -ErrorMessage $_.Exception.Message }

@@ -1,67 +1,74 @@
-﻿# Windows 11 单机安全合规加固管理器 - V4 Integrated
+﻿# Windows 11 单机安全合规加固管理器 V5 - C# Native
 
-这版是“真正接入 V4 审计引擎”的版本，而不是之前的简化框架版。
+## 这版改动
 
-## 重点能力
+这版按要求把能改成 C# 的都改成 C# 直接执行，尽量不再依赖 PS1：
 
-01 项 `Step01_AuditLogV4` 已包含：
+- 03 禁止 C$/D$/E$：C# 写注册表 + 调用 net.exe 删除当前盘符共享
+- 06 禁 USB：C# 写注册表 + gpupdate.exe
+- 07 超时锁屏：C# 写注册表
+- 09 本地管理员管理：C# 调用 wmic/net.exe 获取 Administrators 内置组并禁用非白名单本地用户
+- 01 审计：C# 直接调用 auditpol.exe/wevtutil.exe，并用 C# 配置目录 SACL 和生成 ComplianceMapping.html
+- 08 BitLocker：C# 直接调用 manage-bde.exe
+- 日志界面改为结构化日志列表，点击日志可查看完整 JSON 细节
+- 表格列宽限制最小 20、最大 100，避免界面拖拽变形
 
-- 登录/注销审计：4624、4625、4634、4647、4800、4801、4740
-- 文件访问审计：4663、4660、4670、4659
-- 共享访问审计：5140、5145
-- 远程访问/RDP 审计：Security LogonType 10/7/3，TerminalServices 21/24/25/1149
-- 账户管理审计：4720-4781 相关用户/组/密码/锁定事件
-- USB/可移动存储审计：Removable Storage、6416、DriverFrameworks-UserMode
-- 打印审计：Microsoft-Windows-PrintService/Operational，例如 307
-- Security 日志大小/归档目录
-- 文件目录 SACL 自动配置
-- 立即采集并导出 CSV/HTML
-- 生成 `ComplianceMapping.html`，并在 11.2 下列出当前审核目录
-- 安装每日计划任务自动采集
+## 仍保留外部 Windows CLI 的原因
 
-## 使用步骤
+以下功能是 Windows 系统管理命令，C# 直接调用它们，比 C#->PowerShell->命令 更稳定：
 
-1. 用 Visual Studio 2022 打开 `Win11SecurityHardeningManager.csproj`。
-2. 确认安装 `.NET 8 SDK` 和 “.NET 桌面开发”。
-3. 修改 `Config\settings.json`：
-   - `AuditDirectories`
-   - `ArchiveRoot`
-   - `KeepLocalAdmins`
-   - `BitLockerRecoveryKeyBackupPath`
-   - 漏洞扫描服务名称/安装包路径
-4. 右键 Visual Studio，以管理员身份运行。
-5. 清理并重新生成解决方案。
-6. 先点 01 项 “检查”，再点 “启用”，再点 “立即采集审计”。
+- auditpol.exe
+- wevtutil.exe
+- manage-bde.exe
+- net.exe
+- gpupdate.exe
+- wmic.exe
 
-## 单独运行 V4 审计脚本
+## 编译
 
-```powershell
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Scripts\Step01_AuditLogV4\Enable.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Scripts\Step01_AuditLogV4\Export-AuditEvents.ps1
-powershell.exe -NoProfile -ExecutionPolicy Bypass -File .\Scripts\Step01_AuditLogV4\Install-ScheduledTask.ps1
-```
-
-## 高风险说明
-
-- Step02 登录限制：为避免锁死，只创建白名单组，不自动写入拒绝登录 SID。
-- Step03 禁止 C$：`AutoShareWks=0` 对 C$/D$ 等盘符默认管理共享是持久的；ADMIN$/IPC$ 可能由系统维护。
-- Step08 BitLocker：启用前请确认恢复密钥保存位置可用。
-- Step09 本地管理员停用：只停用非白名单本地用户，不处理域组/域用户。
-
-## 输出位置
-
-默认归档目录：
+Visual Studio 2022 打开：
 
 ```text
-C:\AuditArchive
+Win11SecurityHardeningManager.csproj
 ```
 
-每次立即采集会生成：
+需要：
 
 ```text
-C:\AuditArchive\yyyyMMdd_HHmmss\AuditSummary.csv
-C:\AuditArchive\yyyyMMdd_HHmmss\ComplianceMapping.html
-C:\AuditArchive\yyyyMMdd_HHmmss\LogonLogoff\*.csv/*.html
-C:\AuditArchive\yyyyMMdd_HHmmss\FileAccess\*.csv/*.html
-...
+.NET 8 SDK
+.NET 桌面开发
 ```
+
+建议右键 Visual Studio，以管理员身份运行。
+
+## 部署
+
+生成 Release 后复制整个目录：
+
+```text
+bin\Release\net8.0-windows\
+```
+
+不要只复制 exe。目标电脑需要 .NET Desktop Runtime 8。
+
+## 配置
+
+修改：
+
+```text
+Config\settings.json
+```
+
+重点：
+
+- AuditDirectories
+- ArchiveRoot
+- KeepLocalAdmins
+- ScreenLockTimeoutSeconds
+- BitLockerRecoveryKeyBackupPath
+
+## 注意
+
+- 09 本地管理员管理默认只保留 `Administrator`，如果要保留当前 admin，请把 `admin` 加回 `KeepLocalAdmins`。
+- 09 不处理域用户/域组/AzureAD/MicrosoftAccount，只处理本地用户。
+- 02 登录限制和 04 指纹 2FA 保留为说明项，避免用程序误配置导致锁死或伪 2FA。
