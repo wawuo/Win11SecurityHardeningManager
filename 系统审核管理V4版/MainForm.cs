@@ -77,7 +77,7 @@ public sealed class MainForm : Form
         if(adjustingWidth) return;
         adjustingWidth=true;
         if(e.Column.Width < 20) e.Column.Width=20;
-        if(e.Column.Width > 100) e.Column.Width=100;
+        if(e.Column.Width > 500) e.Column.Width=500;
         adjustingWidth=false;
     }
     private bool Confirm(string msg) => MessageBox.Show(msg,"确认",MessageBoxButtons.YesNo,MessageBoxIcon.Warning)==DialogResult.Yes;

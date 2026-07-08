@@ -1,0 +1,20 @@
+﻿{
+  "AppName": "Windows 11 单机安全合规加固管理器 V1",
+  "AllowedDomain": "YOURDOMAIN",
+  "AllowedDomainUsers": [
+    "YOURDOMAIN\\allowed.user1"
+  ],
+  "AuditDirectories": [
+    "C:\\Users",
+    "D:\\AuditSandbox"
+  ],
+  "AuditRetentionDays": 90,
+  "ScreenLockTimeoutSeconds": 900,
+  "KeepLocalAdmins": [
+    "Administrator",
+    "admin"
+  ],
+  "BitLockerRecoveryKeyBackupPath": "C:\\BitLockerKeys",
+  "VulnerabilityScannerInstallerPath": "C:\\Tools\\ScannerAgentSetup.exe",
+  "VulnerabilityScannerServiceName": "ScannerAgent"
+}
